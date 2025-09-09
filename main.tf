@@ -125,7 +125,7 @@ resource "null_resource" "openproject_setup" {
     type        = "ssh"
     host        = aws_instance.openproject.public_ip
     user        = "ec2-user"
-    private_key = file("test-keypair.pem) # Adjust path to your private key
+    private_key = file("test-keypair.pem") # Adjust path to your private key
   }
 
   provisioner "remote-exec" {
@@ -134,12 +134,12 @@ resource "null_resource" "openproject_setup" {
       "sudo amazon-linux-extras install docker -y",
       "sudo service docker start",
       "sudo usermod -a -G docker ec2-user",
-      "sudo docker run -d --name openproject -p 8080:80 " +
-      "-e OPENPROJECT_HOST_NAME=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4) " +
-      "-e OPENPROJECT_SECRET_KEY_BASE=$(openssl rand -hex 32) " +
-      "-e OPENPROJECT_HTTPS=false " +
-      "-v /var/lib/openproject/pgdata:/var/openproject/pgdata " +
-      "-v /var/lib/openproject/assets:/var/openproject/assets " +
+      "sudo docker run -d --name openproject -p 8080:80 ",
+      "-e OPENPROJECT_HOST_NAME=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4) ",
+      "-e OPENPROJECT_SECRET_KEY_BASE=$(openssl rand -hex 32) ",
+      "-e OPENPROJECT_HTTPS=false ",
+      "-v /var/lib/openproject/pgdata:/var/openproject/pgdata ",
+      "-v /var/lib/openproject/assets:/var/openproject/assets ",
       "openproject/openproject:16"
     ]
   }
