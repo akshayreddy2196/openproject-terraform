@@ -135,12 +135,12 @@ resource "null_resource" "openproject_setup" {
       "sudo systemctl enable docker",
       "sudo systemctl start docker",
       "sudo usermod -aG docker ec2-user",
-      "newgrp docker
-      "-e OPENPROJECT_HOST_NAME=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4) ",
-      "-e OPENPROJECT_SECRET_KEY_BASE=$(openssl rand -hex 32) ",
+      "newgrp docker",
+      "-e OPENPROJECT_HOST_NAME=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)",
+      "-e OPENPROJECT_SECRET_KEY_BASE=$(openssl rand -hex 32)",
       "-e OPENPROJECT_HTTPS=false ",
-      "-v /var/lib/openproject/pgdata:/var/openproject/pgdata ",
-      "-v /var/lib/openproject/assets:/var/openproject/assets ",
+      "-v /var/lib/openproject/pgdata:/var/openproject/pgdata",
+      "-v /var/lib/openproject/assets:/var/openproject/assets",
       "openproject/openproject:16"
     ]
   }
