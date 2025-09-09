@@ -110,31 +110,41 @@ resource "aws_instance" "openproject" {
   instance_type               = "t3.medium"
   subnet_id                   = aws_subnet.public_1.id
   vpc_security_group_ids      = [aws_security_group.ec2_sg.id]
+  key_name                    = "test-keypair"
   associate_public_ip_address = true
-
- user_data = <<-EOF
-              #!/bin/bash
-              set -e
-              yum update -y
-              amazon-linux-extras install docker -y
-              service docker start
-              usermod -a -G docker ec2-user
-              #docker run -d -p 8080:80 openproject/community:latest
-              
-              # OPENPROJECT_HOST_NAME uses instance public IPv4 at runtime
-              sudo docker run -d --name openproject \
-              -p 8080:80 \
-              -e OPENPROJECT_HOST_NAME=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4) \
-              -e OPENPROJECT_SECRET_KEY_BASE=$(openssl rand -hex 32) \
-              -e OPENPROJECT_HTTPS=false \
-              -v /var/lib/openproject/pgdata:/var/openproject/pgdata \
-              -v /var/lib/openproject/assets:/var/openproject/assets openproject/openproject:16
-              EOF
 
   tags = {
     Name = "openproject-ec2-ubuntu"
   }
 }
+
+resource "null_resource" "openproject_setup" {
+  depends_on = [aws_instance.openproject]
+
+  connection {
+    type        = "ssh"
+    host        = aws_instance.openproject.public_ip
+    user        = "ec2-user"
+    private_key = file("test-keypair.pem) # Adjust path to your private key
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo yum update -y",
+      "sudo amazon-linux-extras install docker -y",
+      "sudo service docker start",
+      "sudo usermod -a -G docker ec2-user",
+      "sudo docker run -d --name openproject -p 8080:80 " +
+      "-e OPENPROJECT_HOST_NAME=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4) " +
+      "-e OPENPROJECT_SECRET_KEY_BASE=$(openssl rand -hex 32) " +
+      "-e OPENPROJECT_HTTPS=false " +
+      "-v /var/lib/openproject/pgdata:/var/openproject/pgdata " +
+      "-v /var/lib/openproject/assets:/var/openproject/assets " +
+      "openproject/openproject:16"
+    ]
+  }
+}
+
 
 
 resource "aws_lb" "alb" {
