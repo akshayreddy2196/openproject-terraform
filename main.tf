@@ -114,11 +114,12 @@ resource "aws_instance" "openproject" {
 
  user_data = <<-EOF
               #!/bin/bash
+              set -e
               yum update -y
               amazon-linux-extras install docker -y
               service docker start
               usermod -a -G docker ec2-user
-              docker run -d -p 8080:80 openproject/community:latest
+              #docker run -d -p 8080:80 openproject/community:latest
               
               # OPENPROJECT_HOST_NAME uses instance public IPv4 at runtime
               sudo docker run -d --name openproject \
