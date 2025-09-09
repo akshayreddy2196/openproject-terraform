@@ -136,6 +136,7 @@ resource "null_resource" "openproject_setup" {
       "sudo systemctl start docker",
       "sudo usermod -aG docker ec2-user",
       "sg docker -c",
+      "sudo mkdir -p /var/lib/openproject/{pgdata,assets}",
       "sudo docker run -d --name openproject -p 8080:80",
       "-e OPENPROJECT_HOST_NAME=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)",
       "-e OPENPROJECT_SECRET_KEY_BASE=$(openssl rand -hex 32)",
