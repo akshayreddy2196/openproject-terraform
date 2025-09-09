@@ -130,11 +130,12 @@ resource "null_resource" "openproject_setup" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo yum update -y",
-      "sudo amazon-linux-extras install docker -y",
-      "sudo service docker start",
-      "sudo usermod -a -G docker ec2-user",
-      "sudo docker run -d --name openproject -p 8080:80 ",
+      "sudo dnf update -y",
+      "sudo dnf install -y docker",
+      "sudo systemctl enable docker",
+      "sudo systemctl start docker",
+      "sudo usermod -aG docker ec2-user",
+      "newgrp docker
       "-e OPENPROJECT_HOST_NAME=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4) ",
       "-e OPENPROJECT_SECRET_KEY_BASE=$(openssl rand -hex 32) ",
       "-e OPENPROJECT_HTTPS=false ",
