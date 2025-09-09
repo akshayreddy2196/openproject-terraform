@@ -106,57 +106,29 @@ resource "aws_security_group" "ec2_sg" {
 }
 
 resource "aws_instance" "openproject" {
-  ami                         = "ami-02d26659fd82cf299"
+  ami                         = "ami-00ca32bbc84273381"
   instance_type               = "t3.medium"
   subnet_id                   = aws_subnet.public_1.id
   vpc_security_group_ids      = [aws_security_group.ec2_sg.id]
   associate_public_ip_address = true
 
-
-  user_data = <<'EOF'
-#!/bin/bash
-set -euo pipefail
-export DEBIAN_FRONTEND=noninteractive
-
-# Update and upgrade
-apt-get update -y
-apt-get upgrade -y
-
-# Install prerequisites
-apt-get install -y apt-transport-https ca-certificates curl software-properties-common gnupg openssl
-
-# Add Docker GPG key and repository
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-
-# Install Docker CE
-apt-get update -y
-apt-get install -y docker-ce docker-ce-cli containerd.io
-
-# Enable and start Docker
-systemctl enable docker
-systemctl start docker
-
-# Add ubuntu user to docker group (default user on Ubuntu AMIs)
-usermod -aG docker ubuntu
-
-# Create directories for persistent data
-mkdir -p /var/lib/openproject/pgdata
-mkdir -p /var/lib/openproject/assets
-chown -R ubuntu:ubuntu /var/lib/openproject
-
-# Run OpenProject via Docker
-# Host port 8080 -> container port 80
-# OPENPROJECT_HOST_NAME uses instance public IPv4 at runtime
-sudo docker run -d --name openproject \
-  -p 8080:80 \
-  -e OPENPROJECT_HOST_NAME=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4) \
-  -e OPENPROJECT_SECRET_KEY_BASE=$(openssl rand -hex 32) \
-  -e OPENPROJECT_HTTPS=false \
-  -v /var/lib/openproject/pgdata:/var/openproject/pgdata \
-  -v /var/lib/openproject/assets:/var/openproject/assets \
-  openproject/openproject:16
-EOF
+ user_data = <<-EOF
+              #!/bin/bash
+              yum update -y
+              amazon-linux-extras install docker -y
+              service docker start
+              usermod -a -G docker ec2-user
+              docker run -d -p 8080:80 openproject/community:latest
+              
+              # OPENPROJECT_HOST_NAME uses instance public IPv4 at runtime
+              sudo docker run -d --name openproject \
+              -p 8080:80 \
+              -e OPENPROJECT_HOST_NAME=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4) \
+              -e OPENPROJECT_SECRET_KEY_BASE=$(openssl rand -hex 32) \
+              -e OPENPROJECT_HTTPS=false \
+              -v /var/lib/openproject/pgdata:/var/openproject/pgdata \
+              -v /var/lib/openproject/assets:/var/openproject/assets openproject/openproject:16
+              EOF
 
   tags = {
     Name = "openproject-ec2-ubuntu"
